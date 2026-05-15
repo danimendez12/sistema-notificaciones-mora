@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 50px;
+        color: #333333;
+        line-height: 1.6;
+        font-size: 14px;
+    }
+
+    .header {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+
+    .logo {
+        width: 180px;
+    }
+
+    .title {
+        text-align: center;
+        font-size: 22px;
+        font-weight: bold;
+        margin-bottom: 30px;
+        color: #003366;
+    }
+
+    .section {
+        margin-bottom: 20px;
+    }
+
+    .important {
+        font-weight: bold;
+    }
+
+    ol {
+        padding-left: 20px;
+    }
+
+    li {
+        margin-bottom: 15px;
+    }
+
+    .note {
+        margin-top: 25px;
+        padding: 15px;
+        background-color: #f4f4f4;
+        border-left: 4px solid #003366;
+    }
+
+    .footer {
+        margin-top: 40px;
+    }
+</style>
+</head>
+
+<body>
+
+<div class="header">
+    <img src="assets/ENcabezado-Tesoreria.png" class="logo">
+</div>
+
+<div class="title">
+    Aviso traslado de cobro judicial
+</div>
+
+
+<div class="section">
+    <p>Buenas tardes,</p>
+
+    <p>
+        Estimado(a) <strong>{{ nombre }}</strong>:
+    </p>
+
+    <p>
+       Por este medio, el Departamento Financiero Contable del Instituto Tecnológico de Costa Rica le informa que, a la fecha, se registra un atraso de <strong>{{ cant_cuotas }}</strong> cuotas en el pago del financiamiento otorgado para la cobertura de sus estudios correspondiente a los meses de <strong>{{ rango_meses }}</strong>.
+    </p>
+
+    <p class="important">
+       De conformidad con el procedimiento institucional de gestión de cobros, y ante la falta de regularización de su situación financiera, se le comunica que su caso será trasladado a la Oficina de Asesoría Legal para el inicio del proceso de cobro judicial correspondiente.
+    </p>
+    
+    <p>Por lo tanto, se le concede un plazo de <b>8</b> días hábiles para regularizar su situación.</p>
+</div>
+
+
+
+<div class="footer">
+    <p>
+        Agradecemos su atención a este asunto y quedamos a su disposición a través de:
+    </p>
+
+    <p>
+        WhatsApp: 2550-2766<br>
+        Correo electrónico: rprestamos@itcr.ac.cr
+    </p>
+</div>
+
+</body>
+</html>

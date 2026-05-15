@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 50px;
+        color: #333333;
+        line-height: 1.6;
+        font-size: 14px;
+    }
+
+    .header {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    .logo {
+        width: 600px;
+    }
+
+    .title {
+        text-align: center;
+        font-size: 22px;
+        font-weight: bold;
+        margin-bottom: 20px;
+        color: #003366;
+    }
+
+    .section {
+        margin-bottom: 15px;
+    }
+
+    .important {
+        font-weight: bold;
+    }
+
+    ol {
+        padding-left: 20px;
+    }
+
+    li {
+        margin-bottom: 10px;
+    }
+
+    .note {
+        margin-top: 20px;
+        padding: 15px;
+        background-color: #f4f4f4;
+        border-left: 4px solid #003366;
+    }
+
+    .footer {
+        margin-top: 30px;
+    }
+</style>
+</head>
+
+<body>
+
+<div class="header">
+    <img src="{{ logo_path }}" class="logo">
+</div>
+
+<div class="section">
+    <p>Buenas tardes,</p>
+
+    <p>
+        Estimado(a) <strong>{{ nombre }}</strong>:
+    </p>
+
+    <p>
+        De acuerdo con nuestros registros, su cuenta se encuentra al día en sus obligaciones de pago correspondientes a beca préstamo.
+    </p>
+
+    <p class="important">
+        Métodos electrónicos disponibles para sus próximos pagos:
+    </p>
+</div>
+
+<div class="section">
+    <ol>
+        <li>
+            <strong>Pagos en línea BNCR:</strong><br>
+            Visite www.bncr.fi.cr. Diríjase a la sección de Pagos, luego a Universidades y seleccione TEC. Ingrese nuevamente su número de cédula y proceda con el pago de recuperación de préstamos.
+        </li>
+
+        <li>
+            <strong>Pagos en línea BCR:</strong><br>
+            Acceda a www.bancobcr.com y seleccione la opción para Personas. Diríjase al área de Pagos de Servicios, seleccione Educación y Colegios Profesionales, luego el servicio TEC. Ingrese su número de servicio (número de cédula) y proceda con la verificación, convenio y recuperación de préstamos.
+        </li>
+    </ol>
+
+    <p>
+        Los sistemas de conectividad o Internet Banking únicamente permiten el pago completo por cuota. Esto significa que, al cancelar una cuota, automáticamente se desplegará la siguiente para su cancelación, facilitando el pago consecutivo de varias cuotas.
+    </p>
+</div>
+
+<div class="section">
+    <p>
+        <strong>Depósitos a cuentas IBAN:</strong>
+    </p>
+
+    <ul>
+        <li>BNCR: CR97015107510010013527</li>
+        <li>BCR: CR89015201001043764041</li>
+    </ul>
+
+    <p>
+        Esta modalidad se utiliza para pagos extraordinarios que excedan el monto de la cuota o para personas que no poseen cuentas en BNCR o BCR.
+    </p>
+
+    <p>
+        Es responsabilidad del deudor enviar una copia del comprobante de pago al correo electrónico:
+        <strong>rprestamos@itcr.ac.cr</strong>
+        para su correspondiente registro.
+    </p>
+</div>
+
+<div class="note">
+    <strong>Nota:</strong>
+    Si usted ya ha configurado el cargo (débito) directo o ya realizó su pago a través de alguno de estos canales, por favor haga caso omiso de este recordatorio.
+</div>
+
+<div class="footer">
+    <p>
+        Agradecemos su puntualidad y quedamos a su disposición a través de:
+    </p>
+
+    <p>
+        WhatsApp: 2550-2766<br>
+        Correo electrónico: rprestamos@itcr.ac.cr
+    </p>
+</div>
+
+</body>
+</html>
