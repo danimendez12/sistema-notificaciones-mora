@@ -1,12 +1,20 @@
-from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+from typing import Optional
+
 
 @dataclass
-class Persona(ABC):
+class Persona:
+
     nombre: str
     email: str
-    estado:str
-    coutoas_atrasadas: int = field(default=0)
-    fecha_proximo_pago: str = field(default="")
-    rango_mora: str = field(default="")
-    correo_fiador: str = field(default="")
+    estado: str
+
+    cuotas_atrasadas: int = 0
+
+    fecha_proximo_pago: Optional[str] = None
+
+    total: Optional[str] = None
+
+    correo_fiador: Optional[str] = None
+
+    fiador: Optional[str] = None

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            margin: 50px;
+            color: #333333;
+            line-height: 1.6;
+            font-size: 14px;
+        }
+
+        .container {
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo {
+        width: 600px;
+    }
+
+        .title {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 35px;
+            color: #8B0000;
+        }
+
+        .content {
+            margin-bottom: 30px;
+        }
+
+        .paragraph {
+            margin-bottom: 18px;
+            text-align: justify;
+        }
+
+        .important-box {
+            margin: 28px 0;
+            padding: 18px;
+            background-color: #fff4f4;
+            border-left: 5px solid #8B0000;
+            border-radius: 4px;
+            font-weight: bold;
+            text-align: justify;
+        }
+
+        .footer {
+            margin-top: 50px;
+        }
+
+        .signature {
+            margin-top: 25px;
+        }
+
+        .institution {
+            font-weight: bold;
+            color: #003366;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+
+        <header class="header">
+            <img src="{{ logo_path }}" alt="Logo TEC" class="logo">
+        </header>
+
+        <div class="title">
+            Aviso de Cobro Judicial - Beca Préstamo
+        </div>
+
+        <main class="content">
+
+            <p class="paragraph">
+                Buenas tardes,
+            </p>
+
+            <p class="paragraph">
+                Estimado(a) <strong>{{ nombre }}</strong>:
+            </p>
+
+            <p class="paragraph">
+                Por este medio, el Departamento Financiero Contable del Instituto Tecnológico
+                de Costa Rica le informa que, a la fecha, se registra un atraso de
+                <strong>{{ cuotas }}</strong> cuotas en el pago del financiamiento otorgado
+                para la cobertura de sus estudios.
+            </p>
+
+            <p class="paragraph">
+                El saldo pendiente correspondiente asciende a
+                <strong>₡ {{ total }}</strong>.
+            </p>
+
+            <div class="important-box">
+                De conformidad con el procedimiento institucional de gestión de cobros,
+                y ante la falta de regularización de su situación financiera, se le comunica
+                que su caso ha sido trasladado a la Oficina de Asesoría Legal para el inicio
+                del proceso de cobro judicial correspondiente.
+            </div>
+
+            <p class="paragraph">
+                Le agradecemos regularizar su situación financiera a la mayor brevedad posible.
+            </p>
+
+        </main>
+
+        <footer class="footer">
+
+            <p>
+                Saludos cordiales,
+            </p>
+
+            <div class="signature">
+
+                <div class="institution">
+                    Departamento Financiero Contable
+                </div>
+
+                <div>
+                    Instituto Tecnológico de Costa Rica
+                </div>
+
+            </div>
+
+        </footer>
+
+    </div>
+
+</body>
+
+</html>

@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            margin: 50px;
+            color: #333;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .container {
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 35px;
+        }
+
+        .logo {
+        width: 600px;
+        }
+
+        .content {
+            margin-bottom: 30px;
+        }
+
+        .paragraph {
+            margin-bottom: 18px;
+            text-align: justify;
+        }
+
+        .highlight {
+            font-weight: bold;
+        }
+
+        .warning-box {
+            margin: 25px 0;
+            padding: 16px 18px;
+            background-color: #f5f7fa;
+            border-left: 5px solid #003366;
+            border-radius: 4px;
+        }
+
+        .contact-section {
+            margin-top: 30px;
+        }
+
+        .contact-title {
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .contact-list {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .contact-list li {
+            margin-bottom: 8px;
+        }
+
+        .note {
+            margin-top: 20px;
+            font-style: italic;
+        }
+
+        .footer {
+            margin-top: 50px;
+        }
+
+        .signature {
+            margin-top: 30px;
+        }
+
+        .institution {
+            font-weight: bold;
+            color: #003366;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+
+        <header class="header">
+            <img src="{{ logo_path }}" alt="Logo TEC" class="logo">
+        </header>
+
+        <main class="content">
+
+            <p class="paragraph">
+                Buenas tardes,
+            </p>
+
+            <p class="paragraph">
+                Estimado(a) <strong>{{ nombre }}</strong>:
+            </p>
+
+            <p class="paragraph">
+                El Departamento Financiero Contable le informa que actualmente presenta un atraso de
+                <strong>{{ cuotas }}</strong> cuotas correspondientes al financiamiento otorgado para sus estudios,
+                con un saldo total pendiente de ₡ <strong>{{ total }}</strong>
+                (monto que no incluye intereses moratorios).
+            </p>
+
+            <div class="warning-box">
+                De acuerdo con nuestro procedimiento de cobro, el atraso en las cuotas faculta a la Institución
+                para continuar con las gestiones administrativas correspondientes y, eventualmente,
+                proceder con acciones de cobro judicial.
+            </div>
+
+            <p class="paragraph">
+                Por lo tanto, le agradecemos regularizar su situación financiera a la mayor brevedad posible.
+            </p>
+
+            <section class="contact-section">
+
+                <p class="contact-title">
+                    Para consultas o aclaraciones puede comunicarse a través de:
+                </p>
+
+                <ul class="contact-list">
+                    <li>
+                        Correo electrónico:
+                        <strong>rprestamos@itcr.ac.cr</strong>
+                    </li>
+
+                    <li>
+                        Centro de Atención Telefónica y WhatsApp:
+                        <strong>2550-2766</strong>
+                    </li>
+                </ul>
+
+                <p class="note">
+                    En caso de haber realizado el pago recientemente, agradecemos omitir este comunicado.
+                </p>
+
+            </section>
+
+        </main>
+
+        <footer class="footer">
+
+            <p>
+                Saludos cordiales,
+            </p>
+
+            <div class="signature">
+                <div class="institution">
+                    Departamento Financiero Contable
+                </div>
+
+                <div>
+                    Instituto Tecnológico de Costa Rica
+                </div>
+            </div>
+
+        </footer>
+
+    </div>
+
+</body>
+
+</html>

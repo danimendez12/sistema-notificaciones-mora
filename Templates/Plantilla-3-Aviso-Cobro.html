@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 50px;
+        color: #333333;
+        line-height: 1.6;
+        font-size: 14px;
+    }
+
+    .header {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+
+    .logo {
+        width: 600px;
+    }
+
+    .title {
+        text-align: center;
+        font-size: 22px;
+        font-weight: bold;
+        margin-bottom: 30px;
+        color: #003366;
+    }
+
+    .section {
+        margin-bottom: 20px;
+    }
+
+    .important {
+        font-weight: bold;
+    }
+
+    ol {
+        padding-left: 20px;
+    }
+
+    li {
+        margin-bottom: 15px;
+    }
+
+    .note {
+        margin-top: 25px;
+        padding: 15px;
+        background-color: #f4f4f4;
+        border-left: 4px solid #003366;
+    }
+
+    .footer {
+        margin-top: 40px;
+    }
+</style>
+</head>
+
+<body>
+
+<div class="header">
+    <img src="{{ logo_path }}" class="logo">
+</div>
+
+<div class="title">
+    Aviso traslado de cobro judicial
+</div>
+
+
+<div class="content">
+    <p>Buenas tardes,</p>
+
+    <p>
+        Estimado(a) <strong>{{ nombre }}</strong>:
+    </p>
+
+    <p class="paragraph">
+                El Departamento Financiero Contable le informa que actualmente presenta un atraso de
+                <strong>{{ cuotas }}</strong> cuotas correspondientes al financiamiento otorgado para sus estudios,
+                con un saldo total pendiente de ₡ <strong>{{ total }}</strong>
+                (monto que no incluye intereses moratorios).
+            </p>
+
+    <p class="important">
+       De conformidad con el procedimiento institucional de gestión de cobros, y ante la falta de regularización de su situación financiera, se le comunica que su caso será trasladado a la Oficina de Asesoría Legal para el inicio del proceso de cobro judicial correspondiente.
+    </p>
+    
+     <p class="paragraph">
+                Por lo tanto, le agradecemos regularizar su situación financiera a la mayor brevedad posible.
+            </p>
+</div>
+
+
+
+<section class="contact-section">
+
+                <p class="contact-title">
+                    Para consultas o aclaraciones puede comunicarse a través de:
+                </p>
+
+                <ul class="contact-list">
+                    <li>
+                        Correo electrónico:
+                        <strong>rprestamos@itcr.ac.cr</strong>
+                    </li>
+
+                    <li>
+                        Centro de Atención Telefónica y WhatsApp:
+                        <strong>2550-2766</strong>
+                    </li>
+                </ul>
+
+                <p class="note">
+                    En caso de haber realizado el pago recientemente, agradecemos omitir este comunicado.
+                </p>
+
+            </section>
+
+        </main>
+
+        <footer class="footer">
+
+            <p>
+                Saludos cordiales,
+            </p>
+
+            <div class="signature">
+                <div class="institution">
+                    Departamento Financiero Contable
+                </div>
+
+                <div>
+                    Instituto Tecnológico de Costa Rica
+                </div>
+            </div>
+
+        </footer>
+
+    </div>
+
+</body>
+</html>

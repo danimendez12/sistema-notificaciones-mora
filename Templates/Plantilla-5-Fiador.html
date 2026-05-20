@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            margin: 50px;
+            color: #333333;
+            line-height: 1.6;
+            font-size: 14px;
+        }
+
+        .container {
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo {
+        width: 600px;
+    }
+
+        .title {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 35px;
+            color: #003366;
+        }
+
+        .content {
+            margin-bottom: 30px;
+        }
+
+        .paragraph {
+            margin-bottom: 18px;
+            text-align: justify;
+        }
+
+        .highlight {
+            font-weight: bold;
+        }
+
+        .warning-box {
+            margin: 28px 0;
+            padding: 18px;
+            background-color: #f5f7fa;
+            border-left: 5px solid #003366;
+            border-radius: 4px;
+            text-align: justify;
+        }
+
+        .contact-section {
+            margin-top: 35px;
+        }
+
+        .contact-title {
+            font-weight: bold;
+            margin-bottom: 12px;
+        }
+
+        .contact-list {
+            margin: 0;
+            padding-left: 22px;
+        }
+
+        .contact-list li {
+            margin-bottom: 10px;
+        }
+
+        .note {
+            margin-top: 25px;
+            padding: 14px 16px;
+            background-color: #f5f5f5;
+            border-left: 4px solid #003366;
+            border-radius: 4px;
+            font-style: italic;
+        }
+
+        .footer {
+            margin-top: 50px;
+        }
+
+        .signature {
+            margin-top: 25px;
+        }
+
+        .institution {
+            font-weight: bold;
+            color: #003366;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+
+        <header class="header">
+            <img src="{{ logo_path }}" alt="Logo TEC" class="logo">
+        </header>
+
+        <div class="title">
+            Aviso de atraso - Persona fiadora
+        </div>
+
+        <main class="content">
+
+            <p class="paragraph">
+                Buenas tardes,
+            </p>
+
+            <p class="paragraph">
+                Estimado(a) fiador(a) <strong>{{ fiador }}</strong>:
+            </p>
+
+            <p class="paragraph">
+                El Departamento Financiero Contable le informa que la persona deudora
+                <strong>{{ nombre }}</strong> actualmente presenta un atraso de
+                <strong>{{ cuotas }}</strong> cuotas correspondientes al financiamiento
+                otorgado para sus estudios en el Instituto Tecnológico de Costa Rica,
+                con un saldo total pendiente de
+                <strong>₡ {{ total }}</strong>
+                (monto que no incluye intereses moratorios).
+            </p>
+
+            <div class="warning-box">
+                De acuerdo con las condiciones del financiamiento y nuestro procedimiento
+                de cobro, el atraso en las cuotas faculta a la Institución para continuar
+                con las gestiones administrativas correspondientes y, eventualmente,
+                proceder con acciones de cobro judicial.
+            </div>
+
+            <p class="paragraph">
+                Por lo tanto, le agradecemos coordinar con la persona deudora la
+                regularización de la situación financiera a la mayor brevedad posible.
+            </p>
+
+            <section class="contact-section">
+
+                <p class="contact-title">
+                    Para consultas o aclaraciones puede comunicarse a través de:
+                </p>
+
+                <ul class="contact-list">
+
+                    <li>
+                        Correo electrónico:
+                        <strong>rprestamos@itcr.ac.cr</strong>
+                    </li>
+
+                    <li>
+                        Centro de Atención Telefónica y WhatsApp:
+                        <strong>2550-2766</strong>
+                    </li>
+
+                </ul>
+
+                <div class="note">
+                    En caso de que el pago haya sido realizado recientemente,
+                    agradecemos omitir este comunicado.
+                </div>
+
+            </section>
+
+        </main>
+
+        <footer class="footer">
+
+            <p>
+                Saludos cordiales,
+            </p>
+
+            <div class="signature">
+
+                <div class="institution">
+                    Departamento Financiero Contable
+                </div>
+
+                <div>
+                    Instituto Tecnológico de Costa Rica
+                </div>
+
+            </div>
+
+        </footer>
+
+    </div>
+
+</body>
+
+</html>

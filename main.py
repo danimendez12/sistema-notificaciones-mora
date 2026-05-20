@@ -1,155 +1,301 @@
-"""
-Generador de certificados PDF usando Jinja2 + WeasyPrint.
-Uso:
-    python generar_certificado.py --nombre "Daniel Méndez" --salida salida.pdf
-    python generar_certificado.py --datos datos.json        # generación en lote
-"""
+import tkinter as tk
+from tkinter import filedialog, scrolledtext
+import threading
+import traceback
 
-from __future__ import annotations
+import Converter
+import Cargador
+import EmailSender
+import Auditoria
 
-import argparse
-import json
-import logging
-import sys
-from pathlib import Path
-from typing import Any
 
-from jinja2 import Environment, FileSystemLoader, TemplateNotFound
-
-# ── WeasyPrint (falla temprano con mensaje claro) ──────────────────────────────
-try:
-    from weasyprint import HTML as WeasyprintHTML
-    from weasyprint.logger import PROGRESS_LOGGER
-except ImportError as exc:
-    sys.exit(
-        "WeasyPrint no está instalado o faltan dependencias nativas.\n"
-        "Guía de instalación: "
-        "https://doc.courtbouillon.org/weasyprint/stable/first_steps.html#installation\n"
-        f"Detalle: {exc}"
+def seleccionar_archivo():
+    ruta = filedialog.askopenfilename(
+        title="Seleccionar archivo Excel",
+        filetypes=[("Archivos Excel", "*.xlsx *.xls"), ("Todos", "*.*")]
     )
-
-# ── Rutas base ─────────────────────────────────────────────────────────────────
-BASE_DIR      = Path(__file__).resolve().parent
-TEMPLATES_DIR = BASE_DIR / "Templates"
-OUTPUT_DIR    = BASE_DIR / "output"
-TEMPLATE_NAME = "Plantilla-1-AlDia.html"
-
-# ── Logging ────────────────────────────────────────────────────────────────────
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s  %(levelname)-8s  %(message)s",
-    datefmt="%H:%M:%S",
-)
-log = logging.getLogger(__name__)
-PROGRESS_LOGGER.setLevel(logging.WARNING)   # silencia el verbose de WeasyPrint
+    if ruta:
+        entrada_archivo.set(ruta)
 
 
-# ── Jinja2 ─────────────────────────────────────────────────────────────────────
-def _build_env() -> Environment:
-    if not TEMPLATES_DIR.is_dir():
-        sys.exit(f"Carpeta de templates no encontrada: {TEMPLATES_DIR}")
-    return Environment(
-        loader=FileSystemLoader(str(TEMPLATES_DIR)),
-        autoescape=False,
-        keep_trailing_newline=True,
-    )
+def log(mensaje, color="white"):
+    area_log.config(state="normal")
+    area_log.insert(tk.END, mensaje + "\n", color)
+    area_log.see(tk.END)
+    area_log.config(state="disabled")
 
 
-def render_template(env: Environment, context: dict[str, Any]) -> str:
-    """Renderiza el template con el contexto dado."""
-    try:
-        template = env.get_template(TEMPLATE_NAME)
-    except TemplateNotFound:
-        sys.exit(f"Template no encontrado: {TEMPLATES_DIR / TEMPLATE_NAME}")
-    return template.render(**context)
+def log_auditoria(nombre, info: dict):
+    """Muestra el resumen de auditoría de una persona en el log."""
+    pdf_ok      = "✅" if info.get("notificacion_generada")       else "❌"
+    pdf_fiador  = "✅" if info.get("notificacion_fiador_generada") else "—"
+    mail_deudor = "✅" if info.get("correo_deudor_enviado")        else "❌"
+    mail_fiador = "✅" if info.get("correo_fiador_enviado")        else "—"
+    cuotas      = info.get("cuotas_atrasadas", "?")
+    total       = info.get("total", "?")
+    mensaje     = info.get("mensaje", "")
+    error_envio = info.get("error_envio", "")
+
+    log(f"   ├ PDF:    notif. {pdf_ok}   fiador {pdf_fiador}")
+    log(f"   ├ Correo: deudor {mail_deudor}   fiador {mail_fiador}")
+    log(f"   ├ Cuotas atras.: {cuotas}   Total: {total}")
+
+    if error_envio:
+        log(f"   ├ ⚠️  {error_envio}", "warn")
+
+    ultimo = mensaje or "Procesado correctamente"
+    color  = "warn" if (mensaje and mensaje != "Procesado correctamente") else "white"
+    log(f"   └ {ultimo}", color)
 
 
-# ── PDF ────────────────────────────────────────────────────────────────────────
-def html_to_pdf(html: str, dest: Path) -> None:
-    from playwright.sync_api import sync_playwright
+def ejecutar_proceso():
+    archivo = entrada_archivo.get().strip()
+    if not archivo:
+        log("⚠️  Por favor seleccioná un archivo Excel primero.", "warn")
+        return
 
-    dest.parent.mkdir(parents=True, exist_ok=True)
-    with sync_playwright() as p:
-        browser = p.chromium.launch()
-        page = browser.new_page()
-        page.set_content(html, base_url=TEMPLATES_DIR.as_uri())
-        page.pdf(
-            path=str(dest),
-            format="A4",
-            print_background=True,
-            margin={"top": "0", "bottom": "0", "left": "0", "right": "0"},
-        )
-        browser.close()
-    log.info("PDF generado → %s", dest)
+    boton_ejecutar.config(state="disabled")
+    area_log.config(state="normal")
+    area_log.delete("1.0", tk.END)
+    area_log.config(state="disabled")
 
-# ── Generación individual ──────────────────────────────────────────────────────
-def generar_uno(env: Environment, context: dict[str, Any], salida: Path) -> None:
-    html = render_template(env, context)
-    html_to_pdf(html, salida)
-
-
-# ── Generación en lote ─────────────────────────────────────────────────────────
-def generar_lote(env: Environment, datos_path: Path) -> None:
-    """
-    Lee un JSON con lista de registros, p.ej.:
-        [
-          {"nombre": "Ana López",    "salida": "ana_lopez.pdf"},
-          {"nombre": "Luis Pérez",   "salida": "luis_perez.pdf"}
-        ]
-    Si "salida" no está presente, deriva el nombre del campo "nombre".
-    """
-    registros: list[dict] = json.loads(datos_path.read_text(encoding="utf-8"))
-    log.info("Procesando %d registros…", len(registros))
-
-    errores: list[str] = []
-    for i, rec in enumerate(registros, 1):
-        nombre_archivo = rec.pop("salida", None) or _nombre_seguro(rec.get("nombre", f"registro_{i}"))
-        dest = OUTPUT_DIR / nombre_archivo
+    def proceso():
         try:
-            generar_uno(env, rec, dest)
-        except Exception as exc:          # noqa: BLE001
-            log.error("Error en registro %d (%s): %s", i, dest.name, exc)
-            errores.append(dest.name)
+            auditoria = {}
+            log(f"📂  Cargando: {archivo}")
 
-    if errores:
-        log.warning("Fallaron %d archivos: %s", len(errores), errores)
-    else:
-        log.info("Lote completado sin errores.")
+            registros, auditoria = Cargador.cargar_registros(archivo, auditoria)
+            total_reg = len(registros)
+            log(f"✅  {total_reg} registro(s) cargados.\n")
+
+            ok = 0
+            errores = 0
+
+            for i, persona in enumerate(registros, 1):
+                nombre = getattr(persona, "nombre", f"Registro {i}")
+                log(f"🔄  [{i}/{total_reg}] {nombre}")
+
+                try:
+                    # ── Generar PDF ───────────────────────────────────
+                    resultado, auditoria = Converter.generar_pdf(
+                        persona, auditoria
+                    )
+
+                    # ── Enviar correos ────────────────────────────────
+                    auditoria = EmailSender.enviar_correos(
+                        persona, resultado, auditoria
+                    )
+
+                    ok += 1
+
+                except Exception as e:
+                    log(f"   ❌  {e}", "error")
+                    log(traceback.format_exc(), "error")
+                    errores += 1
+
+                finally:
+                    # Muestra lo que se logró, incluso si falló a mitad
+                    log_auditoria(nombre, auditoria.get(nombre, {}))
+
+            # ── Resumen final ────────────────────────────────────────
+            log(f"\n{'─'*50}")
+            log(
+                f"✔️  Finalizó.  Correctos: {ok}   Con errores: {errores}",
+                "ok" if errores == 0 else "warn"
+            )
+            Auditoria.generar_auditoria(auditoria)
+
+        except Exception as e:
+            log(f"\n❌  Error general: {e}", "error")
+            log(traceback.format_exc(), "error")
+
+        finally:
+            boton_ejecutar.config(state="normal")
+
+    threading.Thread(target=proceso, daemon=True).start()
 
 
-def _nombre_seguro(texto: str) -> str:
-    """Convierte un nombre a un nombre de archivo seguro."""
-    return "".join(c if c.isalnum() or c in "-_" else "_" for c in texto).strip("_") + ".pdf"
+# ── Ventana principal ──────────────────────────────────────────────
+ventana = tk.Tk()
+ventana.title("Procesador de Cuotas Atrasadas")
+ventana.geometry("680x480")
+ventana.resizable(False, False)
 
+# ── Paleta institucional ───────────────────────────────────────────
+COLOR_FONDO        = "#F4F6F9"   # Blanco grisáceo
+COLOR_NAVY         = "#0A2342"   # Azul marino
+COLOR_NAVY_LIGHT   = "#163B65"
+COLOR_ROJO         = "#B22222"   # Rojo institucional
+COLOR_BLANCO       = "#FFFFFF"
+COLOR_TEXTO        = "#1F2937"
+COLOR_BORDER       = "#CBD5E1"
 
-# ── CLI ────────────────────────────────────────────────────────────────────────
-def _parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Genera certificados PDF desde una plantilla HTML.")
-    group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument("--nombre", help="Nombre del estudiante (generación individual)")
-    group.add_argument("--datos",  help="Ruta a JSON para generación en lote")
+ventana.configure(bg=COLOR_FONDO)
 
-    parser.add_argument(
-        "--salida",
-        default=None,
-        help="Nombre del PDF de salida (solo con --nombre). Default: output/<nombre>.pdf",
-    )
-    return parser.parse_args()
+entrada_archivo = tk.StringVar()
 
+FONT       = ("Consolas", 10)
+FONT_LABEL = ("Segoe UI", 10)
 
-def main() -> None:
-    args   = _parse_args()
-    env    = _build_env()
+# ── Sección selección de archivo ──────────────────────────────────
+frame_top = tk.Frame(
+    ventana,
+    bg=COLOR_FONDO,
+    pady=18
+)
+frame_top.pack(fill="x", padx=20)
 
-    if args.nombre:
-        dest = OUTPUT_DIR / (args.salida or _nombre_seguro(args.nombre))
-        generar_uno(env, {"nombre": args.nombre}, dest)
-    else:
-        datos_path = Path(args.datos)
-        if not datos_path.is_file():
-            sys.exit(f"Archivo de datos no encontrado: {datos_path}")
-        generar_lote(env, datos_path)
+tk.Label(
+    frame_top,
+    text="Archivo Excel",
+    bg=COLOR_FONDO,
+    fg=COLOR_NAVY,
+    font=("Segoe UI", 10, "bold")
+).pack(anchor="w")
 
+frame_fila = tk.Frame(
+    frame_top,
+    bg=COLOR_FONDO
+)
+frame_fila.pack(fill="x", pady=(6, 0))
 
-if __name__ == "__main__":
-    main()
+tk.Entry(
+    frame_fila,
+    textvariable=entrada_archivo,
+
+    bg=COLOR_BLANCO,
+    fg=COLOR_TEXTO,
+    insertbackground=COLOR_NAVY,
+
+    relief="flat",
+    font=FONT,
+    bd=0,
+
+    highlightthickness=1,
+    highlightbackground=COLOR_BORDER,
+    highlightcolor=COLOR_NAVY_LIGHT
+
+).pack(
+    side="left",
+    fill="x",
+    expand=True,
+    ipady=6,
+    padx=(0, 8)
+)
+
+tk.Button(
+    frame_fila,
+    text="Buscar…",
+    command=seleccionar_archivo,
+
+    bg=COLOR_NAVY,
+    fg=COLOR_BLANCO,
+
+    activebackground=COLOR_NAVY_LIGHT,
+    activeforeground=COLOR_BLANCO,
+
+    relief="flat",
+    font=FONT_LABEL,
+
+    padx=12,
+    pady=4,
+
+    cursor="hand2",
+    bd=0
+
+).pack(side="left")
+
+# ── Botón ejecutar ────────────────────────────────────────────────
+boton_ejecutar = tk.Button(
+    ventana,
+
+    text="▶  Ejecutar proceso",
+    command=ejecutar_proceso,
+
+    bg=COLOR_ROJO,
+    fg=COLOR_BLANCO,
+
+    activebackground="#8B1E1E",
+    activeforeground=COLOR_BLANCO,
+
+    relief="flat",
+
+    font=("Segoe UI", 11, "bold"),
+
+    padx=20,
+    pady=8,
+
+    cursor="hand2",
+    bd=0
+)
+
+boton_ejecutar.pack(
+    pady=(0, 14)
+)
+
+# ── Área de log ───────────────────────────────────────────────────
+frame_log = tk.Frame(
+    ventana,
+    bg=COLOR_FONDO,
+    padx=20
+)
+
+frame_log.pack(
+    fill="both",
+    expand=True,
+    pady=(0, 16)
+)
+
+tk.Label(
+    frame_log,
+    text="Log de ejecución",
+
+    bg=COLOR_FONDO,
+    fg=COLOR_NAVY,
+
+    font=("Segoe UI", 9, "bold")
+
+).pack(anchor="w", pady=(0, 4))
+
+area_log = scrolledtext.ScrolledText(
+
+    frame_log,
+
+    bg=COLOR_BLANCO,
+    fg=COLOR_TEXTO,
+
+    insertbackground=COLOR_NAVY,
+
+    relief="flat",
+
+    font=FONT,
+
+    state="disabled",
+    wrap="word",
+
+    bd=0,
+
+    highlightthickness=1,
+    highlightbackground=COLOR_BORDER
+
+)
+
+area_log.pack(fill="both", expand=True)
+
+# ── Tags del log ──────────────────────────────────────────────────
+area_log.tag_config(
+    "ok",
+    foreground="#1E7F37"
+)
+
+area_log.tag_config(
+    "error",
+    foreground=COLOR_ROJO
+)
+
+area_log.tag_config(
+    "warn",
+    foreground="#C77D00"
+)
+
+ventana.mainloop()
