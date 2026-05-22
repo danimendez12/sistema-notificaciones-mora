@@ -27,218 +27,147 @@ env = Environment(
 )
 
 
-async def html_to_pdf(
-    html_content: str,
-    pdf_output: Path
+async def _generar_todos(
+    template,
+    templateFiador,
+    context: dict,
+    pdf_principal: Path,
+    pdf_fiador_path: Path | None,
+    auditoria_persona: dict,
+    instrucciones_persona: dict,
 ):
-
-    temp_html = pdf_output.with_suffix(".html")
-
-    temp_html.write_text(
-        html_content,
-        encoding="utf-8"
+    html = template.render(**context)
+    await html_to_pdf(html, pdf_principal)
+    auditoria_persona["notificacion_generada"] = True
+    instrucciones_persona["pdf_principal"] = str(
+        pdf_principal.relative_to(OUTPUT_DIR)
     )
 
+    if templateFiador and pdf_fiador_path:
+        html_fiador = templateFiador.render(**context)
+        await html_to_pdf(html_fiador, pdf_fiador_path)
+        auditoria_persona["notificacion_fiador_generada"] = True
+        instrucciones_persona["pdf_fiador"] = str(
+            pdf_fiador_path.relative_to(OUTPUT_DIR)
+        )
+
+
+async def html_to_pdf(html_content: str, pdf_output: Path) -> None:
+    temp_html = pdf_output.with_suffix(".html")
+    temp_html.write_text(html_content, encoding="utf-8")
+
     async with async_playwright() as p:
-
         browser = await p.chromium.launch()
-
         page = await browser.new_page()
-
-        await page.goto(
-            temp_html.as_uri(),
-            wait_until="networkidle"
-        )
-
-        await page.pdf(
-            path=str(pdf_output),
-            format="A4",
-            print_background=True
-        )
-
-        await browser.close()
-
-    temp_html.unlink(missing_ok=True)
+        try:
+            await page.goto(temp_html.as_uri(), wait_until="networkidle")
+            await page.pdf(path=str(pdf_output), format="A4", print_background=True)
+        finally:
+            await browser.close()
+            temp_html.unlink(missing_ok=True)  # siempre limpia
 
 
-def generar_pdf(persona: Persona, auditoria: dict) -> tuple[dict[str, Path | None], dict]:
+def generar_pdf(
+    persona: Persona,
+    auditoria: dict,
+    instrucciones: dict,
+) -> tuple[dict[str, Path | None], dict, dict]:  # siempre 3 elementos
 
     auditoria_persona = {
-        "fecha": datetime.now().strftime(
-            "%Y-%m-%d %H:%M:%S"
-        ),
+        "fecha": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "estado": persona.estado,
-        "cuotas_atrasadas": int(
-            persona.cuotas_atrasadas
-        ),
+        "cuotas_atrasadas": int(persona.cuotas_atrasadas),
         "total": persona.total,
         "notificacion_generada": False,
         "notificacion_fiador_generada": False,
-        "correo_fiador": bool(
-            persona.correo_fiador and (persona.correo_fiador != "")
-        ),
-        "mensaje": ""
+        "correo_fiador": bool(persona.correo_fiador),
+        "mensaje": "",
     }
-    templateFiador = None
 
-    # Sanitizar nombre
-    safe_name = re.sub(
-        r'[\\/*?:"<>|]',
-        "_",
-        persona.nombre
-    )
+    instrucciones_persona = {
+        "nombre": persona.nombre,
+        "estado": persona.estado,
+        "correo_deudor": persona.email,
+        "pdf_principal": None,
+        "correo_fiador": persona.correo_fiador,
+        "pdf_fiador": None,
+        "incluir_fiador": False,
+    }
 
-    # Selección plantilla principal
-    if (
-        persona.cuotas_atrasadas == 0
-        and persona.estado == "NORMAL"
-    ):
+    def _registrar_y_retornar(mensaje: str) -> tuple[dict[str, Path | None], dict, dict]:
+        auditoria_persona["mensaje"] = mensaje
+        auditoria_persona["mensaje"] = mensaje
+        auditoria[persona.nombre] = auditoria_persona
+        instrucciones[persona.nombre] = instrucciones_persona
+        return {"pdf_principal": None, "pdf_fiador": None}, auditoria, instrucciones
 
-        template = env.get_template(
-            "Plantilla-1-AlDia.html"
-        )
+    # ── Selección de plantilla ────────────────────────────────────────────────
+    cuotas = int(persona.cuotas_atrasadas)
+    estado = persona.estado
 
-    elif (
-        1 <= persona.cuotas_atrasadas <= 3
-        and persona.estado == "NORMAL"
-    ):
+    MAPA_PLANTILLAS = {
+        (0, "NORMAL"): "Plantilla-1-AlDia.html",
+    }
 
-        template = env.get_template(
-            "Plantilla-2-CUotas-Atrasadas.html"
-        )
+    if estado != "NORMAL":
+        return _registrar_y_retornar(f"Estado no reconocido: {estado}")
 
-    elif (
-        persona.cuotas_atrasadas == 4
-        and persona.estado == "NORMAL"
-    ):
-
-        template = env.get_template(
-            "Plantilla-3-Aviso-Cobro.html"
-        )
-
-    elif (
-        persona.cuotas_atrasadas >= 5
-        and persona.estado == "NORMAL"
-    ):
-
-        template = env.get_template(
-            "Plantilla-4-Cobro-Judicial.html"
-        )
-
+    if cuotas == 0:
+        nombre_template = "Plantilla-1-AlDia.html"
+    elif 1 <= cuotas <= 3:
+        nombre_template = "Plantilla-2-CUotas-Atrasadas.html"
+    elif cuotas == 4:
+        nombre_template = "Plantilla-3-Aviso-Cobro.html"
     else:
+        nombre_template = "Plantilla-4-Cobro-Judicial.html"
 
-        
+    template = env.get_template(nombre_template)
 
-        auditoria_persona["mensaje"] = (
-            f"Estado {persona.estado}"
-        )
+    # ── Fiador ────────────────────────────────────────────────────────────────
+    templateFiador = None
+    tiene_fiador = bool(persona.fiador and persona.correo_fiador)
 
-        auditoria[persona.nombre] = (
-            auditoria_persona
-        )
-        return {
-            "pdf_principal": None,
-            "pdf_fiador": None
-        }, auditoria
+    if cuotas >= 1 and tiene_fiador:
+        templateFiador = env.get_template("Plantilla-5-Fiador.html")
+        instrucciones_persona["incluir_fiador"] = True
+    elif cuotas >= 1:
+        auditoria_persona["mensaje"] = "Sin información de fiador"
 
-    # Determinar si lleva fiador
-    tiene_fiador = (
-        persona.fiador
-        and persona.correo_fiador
-    )
-
-    if (
-        persona.cuotas_atrasadas >= 1
-        and tiene_fiador
-    ):
-
-        templateFiador = env.get_template(
-            "Plantilla-5-Fiador.html"
-        )
-
-    elif persona.cuotas_atrasadas >= 1:
-
-        
-
-        auditoria_persona["mensaje"] = (
-            "Sin información de fiador"
-        )
-
-    # Crear carpeta
+    # ── Paths de salida ───────────────────────────────────────────────────────
+    safe_name = re.sub(r'[\\/*?:"<>|]', "_", persona.nombre)
     persona_dir = OUTPUT_DIR / safe_name
+    persona_dir.mkdir(parents=True, exist_ok=True)
 
-    persona_dir.mkdir(
-        parents=True,
-        exist_ok=True
-    )
+    pdf_principal = persona_dir / f"Notificacion-{safe_name}.pdf"
+    pdf_fiador = persona_dir / f"Fiador-{safe_name}.pdf" if templateFiador else None
 
     context = {
         "nombre": persona.nombre,
-        "estado": persona.estado,
-        "cuotas": int(persona.cuotas_atrasadas),
+        "estado": estado,
+        "cuotas": cuotas,
         "fecha_proximo_pago": persona.fecha_proximo_pago,
         "total": persona.total,
         "fiador": persona.fiador,
         "correo_fiador": persona.correo_fiador,
-        "logo_path": logo_path
+        "logo_path": logo_path,
     }
 
-    # Rutas PDF
-    pdf_principal = (
-        persona_dir
-        / f"Notificacion-{safe_name}.pdf"
-    )
-
-    pdf_fiador = None
-
-    async def generar_todos():
-
-        nonlocal pdf_fiador
-
-        # PDF principal
-        html = template.render(**context)
-
-        await html_to_pdf(
-            html,
-            pdf_principal
+    asyncio.run(
+        _generar_todos(
+            template,
+            templateFiador,
+            context,
+            pdf_principal,
+            pdf_fiador,
+            auditoria_persona,
+            instrucciones_persona,
         )
-        auditoria_persona[
-            "notificacion_generada"
-        ] = True
-
-        # PDF fiador
-        if templateFiador:
-
-            html_fiador = templateFiador.render(
-                **context
-            )
-
-            pdf_fiador = (
-                persona_dir
-                / f"Fiador-{safe_name}.pdf"
-            )
-
-            await html_to_pdf(
-                html_fiador,
-                pdf_fiador
-            )
-
-            auditoria_persona[
-                "notificacion_fiador_generada"
-            ] = True
-    asyncio.run(generar_todos())
+    )
 
     if not auditoria_persona["mensaje"]:
+        auditoria_persona["mensaje"] = "Procesado correctamente"
 
-        auditoria_persona["mensaje"] = (
-            "Procesado correctamente"
-        )
+    auditoria[persona.nombre] = auditoria_persona
+    instrucciones[persona.nombre] = instrucciones_persona
 
-    auditoria[persona.nombre] = (
-        auditoria_persona
-    )
-
-    return {
-        "pdf_principal": pdf_principal,
-        "pdf_fiador": pdf_fiador
-    }, auditoria
+    return {"pdf_principal": pdf_principal, "pdf_fiador": pdf_fiador}, auditoria, instrucciones

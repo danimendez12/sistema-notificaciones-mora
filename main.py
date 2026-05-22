@@ -7,6 +7,7 @@ import Converter
 import Cargador
 import EmailSender
 import Auditoria
+import GeneradorInstrucciones
 
 
 def seleccionar_archivo():
@@ -62,6 +63,7 @@ def ejecutar_proceso():
     def proceso():
         try:
             auditoria = {}
+            instrucciones = {}
             log(f"📂  Cargando: {archivo}")
 
             registros, auditoria = Cargador.cargar_registros(archivo, auditoria)
@@ -77,8 +79,8 @@ def ejecutar_proceso():
 
                 try:
                     # ── Generar PDF ───────────────────────────────────
-                    resultado, auditoria = Converter.generar_pdf(
-                        persona, auditoria
+                    resultado, auditoria, instrucciones = Converter.generar_pdf(
+                        persona, auditoria, instrucciones
                     )
 
                     # ── Enviar correos ────────────────────────────────
@@ -104,6 +106,7 @@ def ejecutar_proceso():
                 "ok" if errores == 0 else "warn"
             )
             Auditoria.generar_auditoria(auditoria)
+            GeneradorInstrucciones.generar_instrucciones(instrucciones)
 
         except Exception as e:
             log(f"\n❌  Error general: {e}", "error")

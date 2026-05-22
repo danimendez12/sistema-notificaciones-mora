@@ -27,7 +27,7 @@ def enviar_correo(
             str(adjunto)
         )
 
-        mail.Display() #Para enviar cambiar a .Send()
+        mail.Send() #Para enviar cambiar a .Send()
 
         print(
             f"Correo enviado a {correo}"
