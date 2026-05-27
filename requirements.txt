@@ -1,0 +1,4 @@
+jinja2
+playwright
+pywin32
+openpyxl

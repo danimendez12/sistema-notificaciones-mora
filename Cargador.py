@@ -38,7 +38,7 @@ def cargar_registros(
 
     hoja = wb.active
     registros: list[Model.Persona] = []
-    for fila in hoja.iter_rows(min_row=2, values_only=True):
+    for index, fila in enumerate(hoja.iter_rows(min_row=2, values_only=True), start=2):
         try:
 
             persona = Model.Persona(
@@ -69,12 +69,25 @@ def cargar_registros(
 
                 correo_fiador=clean_value(fila[15]),
 
-                fiador=clean_value( fila[14] )
+                fiador=clean_value(fila[14])
             )
 
             registros.append(persona)
-        except Exception as exc:          
-            auditoria[nombre] = f"error al procesar fila {fila}: {exc}"
+        except Exception as exc:
+            nombre_error = clean_value(fila[2]) or f"Fila {index}"
+            auditoria[nombre_error] = {
+                "fecha": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "estado": None,
+                "cuotas_atrasadas": 0,
+                "total": None,
+                "notificacion_generada": False,
+                "notificacion_fiador_generada": False,
+                "correo_fiador": False,
+                "correo_deudor_enviado": False,
+                "correo_fiador_enviado": False,
+                "error_envio": "",
+                "mensaje": f"Error al procesar fila {index}: {exc}",
+            }
 
     return list(registros), auditoria
 

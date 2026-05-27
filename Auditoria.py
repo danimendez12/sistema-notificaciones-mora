@@ -52,50 +52,57 @@ def generar_auditoria(
                 f"Persona: {nombre}\n"
             )
 
+            if isinstance(datos, dict):
+                estado = datos.get('estado')
+                cuotas = datos.get('cuotas_atrasadas')
+                total = datos.get('total')
+                fecha_proc = datos.get('fecha')
+            else:
+                estado = None
+                cuotas = None
+                total = None
+                fecha_proc = None
+
             file.write(
-                f"Estado: "
-                f"{datos.get('estado')}\n"
+                f"Estado: {estado}\n"
             )
 
             file.write(
-                f"Cuotas atrasadas: "
-                f"{datos.get('cuotas_atrasadas')}\n"
+                f"Cuotas atrasadas: {cuotas}\n"
             )
 
             file.write(
-                f"Total pendiente: "
-                f"{datos.get('total')}\n"
+                f"Total pendiente: {total}\n"
             )
 
             file.write(
-                f"Fecha procesamiento: "
-                f"{datos.get('fecha')}\n"
+                f"Fecha procesamiento: {fecha_proc}\n"
             )
 
-            file.write(
-                f"PDF principal generado: "
-                "Se genero el documento" if datos.get("notificacion_generada") else "No se genero el documento\n"
-            )
-
-            file.write(
-                f"PDF fiador generado: "
-                "Se genero el documento" if datos.get("notificacion_fiador_generada") else "No se genero el documento\n"
-            )
-
-            file.write(
-                f"Correo deudor enviado: "
-                "Se envió el correo" if datos.get("correo_deudor_enviado") else "No se envió el correo\n"
-            )
-
-            file.write(
-                f"Correo fiador enviado: "
-                "Se envió el correo" if datos.get("correo_fiador_enviado") else "No se envió el correo\n"
-            )
-
-            file.write(
-                f"Mensaje: "
-                f"{datos.get('mensaje')}\n"
-            )
+            if isinstance(datos, dict):
+                file.write(
+                    f"PDF principal generado: {'Se generó el documento' if datos.get('notificacion_generada') else 'No se generó el documento'}\n"
+                )
+                file.write(
+                    f"PDF fiador generado: {'Se generó el documento' if datos.get('notificacion_fiador_generada') else 'No se generó el documento'}\n"
+                )
+                file.write(
+                    f"Correo deudor enviado: {'Se envió el correo' if datos.get('correo_deudor_enviado') else 'No se envió el correo'}\n"
+                )
+                file.write(
+                    f"Correo fiador enviado: {'Se envió el correo' if datos.get('correo_fiador_enviado') else 'No se envió el correo'}\n"
+                )
+                file.write(
+                    f"Mensaje: {datos.get('mensaje')}\n"
+                )
+                if datos.get('error_envio'):
+                    file.write(
+                        f"Error envío: {datos.get('error_envio')}\n"
+                    )
+            else:
+                file.write(
+                    f"Mensaje: {datos}\n"
+                )
 
             file.write(
                 "-" * 80 + "\n"
