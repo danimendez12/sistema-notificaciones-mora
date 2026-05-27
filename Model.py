@@ -13,8 +13,16 @@ class Persona:
 
     fecha_proximo_pago: Optional[str] = None
 
-    total: Optional[str] = None
+    total: Optional[float] = None
 
     correo_fiador: Optional[str] = None
 
     fiador: Optional[str] = None
+
+    @property
+    def total_formateado(self) -> str:
+
+        if self.total is None:
+            return "0.00"
+
+        return f"{self.total:,.2f}"

@@ -4,10 +4,12 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 from dataclasses import dataclass, field
 import os
+from time import perf_counter
 from typing import Any
 import Model
 
 import openpyxl
+
 
 def clean_value(value):
 
@@ -26,9 +28,10 @@ def clean_value(value):
 def cargar_registros(
     archivo_excel: str,
     auditoria: dict,
-) -> tuple[list[Model.Persona], dict[str,Any]]:
+    monitoreo: dict
+) -> tuple[list[Model.Persona], dict[str,Any], dict[str,Any]]:
 
-
+    inicio = perf_counter()
     nombre = os.path.splitext(
         os.path.basename(archivo_excel)
     )[0]
@@ -38,6 +41,8 @@ def cargar_registros(
 
     hoja = wb.active
     registros: list[Model.Persona] = []
+    filas_validas = 0
+    filas_invalidas = 0
     for index, fila in enumerate(hoja.iter_rows(min_row=2, values_only=True), start=2):
         try:
 
@@ -58,11 +63,11 @@ def cargar_registros(
                 ) if clean_value(fila[9]) else None,
 
                 total=(
-                    str(float(
+                    float(
                         str(clean_value(fila[13]))
                         .replace(".", "")
                         .replace(",", ".")
-                    ))
+                    )
                     if clean_value(fila[13])
                     else None
                 ),
@@ -73,6 +78,7 @@ def cargar_registros(
             )
 
             registros.append(persona)
+            filas_validas += 1
         except Exception as exc:
             nombre_error = clean_value(fila[2]) or f"Fila {index}"
             auditoria[nombre_error] = {
@@ -88,6 +94,13 @@ def cargar_registros(
                 "error_envio": "",
                 "mensaje": f"Error al procesar fila {index}: {exc}",
             }
+            filas_invalidas += 1
+    monitoreo["metricas_cargador"] = {
+        "Tiempo_carga": perf_counter() - inicio,
+        "Registros_cargados": len(registros),
+        "Filas_validas": filas_validas,
+        "Filas_invalidas": filas_invalidas
+    }
 
-    return list(registros), auditoria
+    return list(registros), auditoria, monitoreo
 

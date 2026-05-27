@@ -4,6 +4,17 @@ import win32com.client as win32
 from Model import Persona
 
 
+def _asunto_por_cuotas(cuotas: int) -> str:
+    """Retorna el asunto del correo según las cuotas atrasadas."""
+    if cuotas == 0:
+        return "Notificacion de estado de cuenta - Al día Instituto Tecnológico de Costa Rica"
+    if 1 <= cuotas <= 3:
+        return "Notificacion de atraso - Pago Beca Prestamos - Instituto Tecnológico de Costa Rica"
+    if cuotas == 4:
+        return "Notificacion de Cobro Judicial - Pago Beca Prestamos - Instituto Tecnológico de Costa Rica"
+    return "Notificacion de Traslado a Cobro Judicial - Pago Beca Prestamos - Instituto Tecnológico de Costa Rica"
+
+
 def enviar_correo(
     correo: str,
     asunto: str,
@@ -50,12 +61,10 @@ def enviar_correos(
         # =====================
         if resultado.get("pdf_principal"):
             if persona.email:
+                asunto_correo = _asunto_por_cuotas(int(persona.cuotas_atrasadas))
                 enviado = enviar_correo(
                     correo=persona.email,
-                    asunto=(
-                        "Notificación "
-                        "Departamento Financiero"
-                    ),
+                    asunto=asunto_correo,
                     cuerpo=(
                         f"Estimado(a) {persona.nombre},\n\n"
                         "Adjunto encontrará la notificación correspondiente.\n\n"
@@ -65,6 +74,8 @@ def enviar_correos(
                     adjunto=resultado["pdf_principal"]
                 )
                 auditoria_envio["correo_deudor_enviado"] = enviado
+                auditoria_envio["correo_deudor"] = persona.email
+                auditoria_envio["asunto_deudor"] = asunto_correo
                 if not enviado:
                     errores.append("No se pudo enviar el correo al deudor")
             else:
@@ -75,12 +86,10 @@ def enviar_correos(
         # =====================
         if resultado.get("pdf_fiador"):
             if persona.correo_fiador:
+                asunto_fiador = _asunto_por_cuotas(int(persona.cuotas_atrasadas))
                 enviado_fiador = enviar_correo(
                     correo=persona.correo_fiador,
-                    asunto=(
-                        "Notificación "
-                        "Persona Fiadora"
-                    ),
+                    asunto=asunto_fiador,
                     cuerpo=(
                         f"Estimado(a) {persona.fiador},\n\n"
                         "Adjunto encontrará la notificación correspondiente.\n\n"
@@ -90,6 +99,8 @@ def enviar_correos(
                     adjunto=resultado["pdf_fiador"]
                 )
                 auditoria_envio["correo_fiador_enviado"] = enviado_fiador
+                auditoria_envio["correo_fiador"] = persona.correo_fiador
+                auditoria_envio["asunto_fiador"] = asunto_fiador
                 if not enviado_fiador:
                     errores.append("No se pudo enviar el correo al fiador")
             else:
