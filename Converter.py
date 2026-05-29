@@ -171,9 +171,9 @@ def generar_pdf(
     templateFiador = None
     tiene_fiador = bool(persona.fiador and persona.correo_fiador)
 
-    if cuotas >= 1 and tiene_fiador:
+    if cuotas >= 3 and tiene_fiador:
         templateFiador = env.get_template("Plantilla-5-Fiador.html")
-    elif cuotas >= 1:
+    elif cuotas >= 3:
         auditoria_persona["mensaje"] = "Sin información de fiador"
 
     # ── Paths de salida ───────────────────────────────────────────────────────
