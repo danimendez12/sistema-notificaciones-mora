@@ -1,13 +1,14 @@
+from time import perf_counter
 import tkinter as tk
 from tkinter import filedialog, scrolledtext
 import threading
 import traceback
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import Converter
 import Cargador
 import EmailSender
 import Auditoria
-import GeneradorInstrucciones
 
 
 def seleccionar_archivo():
@@ -67,46 +68,129 @@ def ejecutar_proceso():
             log(f"📂  Cargando: {archivo}")
 
             registros, auditoria = Cargador.cargar_registros(archivo, auditoria)
-            total_reg = len(registros)
-            log(f"✅  {total_reg} registro(s) cargados.\n")
 
+            total_reg = len(registros)
+            if total_reg == 0:
+                log("⚠️  No se encontraron registros para procesar.", "warn")
+                return
+
+            # ── FASE 1: Generar PDFs en paralelo ──────────────────────────────
+            log("⏳ Fase 1: Generando PDFs en paralelo...")
+            
+            
+            resultados_pdf = {}  # {nombre: {"pdf_principal": Path, "pdf_fiador": Path}}
+            auditoria_lock_gen = threading.Lock()
+            
+            def _generar_pdf_persona(persona):
+                try:
+                    resultado, aud= Converter.generar_pdf(persona, {})
+                    
+                   
+                    
+                    # Thread-safe update de auditoría
+                    with auditoria_lock_gen:
+                        auditoria.update(aud)
+                    
+                    return persona.nombre, resultado
+                except Exception as e:
+                    log(f"   ❌ Error generando PDF para {persona.nombre}: {e}", "error")
+                    error_entry = {
+                        "fecha": perf_counter(),
+                        "estado": getattr(persona, "estado", None),
+                        "cuotas_atrasadas": getattr(persona, "cuotas_atrasadas", 0),
+                        "total": getattr(persona, "total", None),
+                        "notificacion_generada": False,
+                        "notificacion_fiador_generada": False,
+                        "correo_fiador": False,
+                        "correo_deudor_enviado": False,
+                        "correo_fiador_enviado": False,
+                        "error_envio": str(e),
+                        "mensaje": f"Error en generación: {e}",
+                    }
+                    with auditoria_lock_gen:
+                        auditoria[persona.nombre] = error_entry
+                    return persona.nombre, {"pdf_principal": None, "pdf_fiador": None}
+
+            max_workers_pdf = max(1, min(4, total_reg))
+            with ThreadPoolExecutor(max_workers=max_workers_pdf) as executor:
+                futures = {executor.submit(_generar_pdf_persona, p): p for p in registros}
+                for future in as_completed(futures):
+                    try:
+                        nombre, resultado = future.result()
+                        resultados_pdf[nombre] = resultado
+                    except Exception as e:
+                        persona = futures[future]
+                        log(f"   ⚠️  Excepción en thread PDF para {persona.nombre}: {e}", "warn")
+
+           
+
+            # ── FASE 2: Enviar correos en paralelo ────────────────────────────
+            log("⏳ Fase 2: Enviando correos en paralelo...")
+            t_envio_inicio = perf_counter()
+         
+            auditoria_lock = threading.Lock()
+            
+            def _enviar_correo_persona(persona):
+                try:
+                    resultado = resultados_pdf.get(persona.nombre, {"pdf_principal": None, "pdf_fiador": None})
+                    auditoria_actualizada = EmailSender.enviar_correos(persona, resultado, auditoria)
+                    
+                    
+                    
+                    # Thread-safe update de auditoría
+                    with auditoria_lock:
+                        auditoria.update(auditoria_actualizada)
+                    
+                    return persona.nombre
+                except Exception as e:
+                    log(f"   ❌ Error enviando correo para {persona.nombre}: {e}", "error")
+                    with auditoria_lock:
+                        if persona.nombre in auditoria:
+                            auditoria[persona.nombre]["error_envio"] = str(e)
+                    return persona.nombre
+
+            max_workers_email = max(1, min(6, total_reg))
+            with ThreadPoolExecutor(max_workers=max_workers_email) as executor:
+                futures = {executor.submit(_enviar_correo_persona, p): p for p in registros}
+                completados = 0
+                for future in as_completed(futures):
+                    try:
+                        future.result()
+                        completados += 1
+                    except Exception as e:
+                        persona = futures[future]
+                        log(f"   ⚠️  Excepción en thread correo para {persona.nombre}: {e}", "warn")
+
+           
+            # ── Logs finales por persona ──────────────────────────────────────
+            log("📋 Resumen de procesamiento:")
             ok = 0
             errores = 0
-
             for i, persona in enumerate(registros, 1):
                 nombre = getattr(persona, "nombre", f"Registro {i}")
-                log(f"🔄  [{i}/{total_reg}] {nombre}")
-
-                try:
-                    # ── Generar PDF ───────────────────────────────────
-                    resultado, auditoria, instrucciones = Converter.generar_pdf(
-                        persona, auditoria, instrucciones
-                    )
-
-                    # ── Enviar correos ────────────────────────────────
-                    auditoria = EmailSender.enviar_correos(
-                        persona, resultado, auditoria
-                    )
-
+                info = auditoria.get(nombre, {})
+                
+                # Contar como éxito si se generó PDF y correo
+                if info.get("notificacion_generada") or info.get("correo_deudor_enviado"):
                     ok += 1
-
-                except Exception as e:
-                    log(f"   ❌  {e}", "error")
-                    log(traceback.format_exc(), "error")
+                else:
                     errores += 1
+                
+                log_auditoria(nombre, info)
 
-                finally:
-                    # Muestra lo que se logró, incluso si falló a mitad
-                    log_auditoria(nombre, auditoria.get(nombre, {}))
 
-            # ── Resumen final ────────────────────────────────────────
+            # ── Resumen final ─────────────────────────────────────────────────
             log(f"\n{'─'*50}")
             log(
                 f"✔️  Finalizó.  Correctos: {ok}   Con errores: {errores}",
                 "ok" if errores == 0 else "warn"
             )
             Auditoria.generar_auditoria(auditoria)
-            GeneradorInstrucciones.generar_instrucciones(instrucciones)
+            
+            try:
+                Converter.shutdown_playwright()
+            except Exception:
+                pass
 
         except Exception as e:
             log(f"\n❌  Error general: {e}", "error")

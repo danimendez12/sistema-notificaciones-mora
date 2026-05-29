@@ -4,7 +4,7 @@ from datetime import datetime
 
 BASE_DIR = Path(__file__).resolve().parent
 
-OUTPUT_DIR = BASE_DIR / "Output"
+OUTPUT_DIR = BASE_DIR / "Resultados"
 
 OUTPUT_DIR.mkdir(exist_ok=True)
 
@@ -90,7 +90,13 @@ def generar_auditoria(
                     f"Correo deudor enviado: {'Se envió el correo' if datos.get('correo_deudor_enviado') else 'No se envió el correo'}\n"
                 )
                 file.write(
+                    f"Correo deudor: {datos.get('correo_deudor')}\n"
+                )
+                file.write(
                     f"Correo fiador enviado: {'Se envió el correo' if datos.get('correo_fiador_enviado') else 'No se envió el correo'}\n"
+                )
+                file.write(
+                    f"Correo fiador: {datos.get('correo_fiador')}\n"
                 )
                 file.write(
                     f"Mensaje: {datos.get('mensaje')}\n"
