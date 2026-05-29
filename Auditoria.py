@@ -4,7 +4,7 @@ from datetime import datetime
 
 BASE_DIR = Path(__file__).resolve().parent
 
-OUTPUT_DIR = BASE_DIR / "Output"
+OUTPUT_DIR = BASE_DIR / "Resultados"
 
 OUTPUT_DIR.mkdir(exist_ok=True)
 

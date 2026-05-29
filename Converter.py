@@ -1,3 +1,5 @@
+import os
+import sys
 from pathlib import Path
 import re
 import threading
@@ -12,8 +14,13 @@ from Model import Persona
 
 BASE_DIR = Path(__file__).resolve().parent
 
+_meipass = getattr(sys, '_MEIPASS', None)
+if getattr(sys, 'frozen', False) and _meipass:
+    _bundle_root = Path(_meipass)
+    os.environ.setdefault("PLAYWRIGHT_BROWSERS_PATH", str(_bundle_root / "ms-playwright"))
+
 TEMPLATES_DIR = BASE_DIR / "Templates"
-OUTPUT_DIR = BASE_DIR / "Output"
+OUTPUT_DIR = BASE_DIR / "Resultados"
 
 OUTPUT_DIR.mkdir(exist_ok=True)
 
@@ -132,7 +139,7 @@ def _generar_todos_sync(
 def generar_pdf(
     persona: Persona,
     auditoria: dict,
-) -> tuple[dict[str, Path | None], dict, dict]:
+) -> tuple[dict[str, Path | None], dict]:
 
     auditoria_persona = {
         "fecha": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -146,7 +153,7 @@ def generar_pdf(
     }
 
 
-    def _registrar_y_retornar(mensaje: str) -> tuple[dict[str, Path | None], dict, dict]:
+    def _registrar_y_retornar(mensaje: str) -> tuple[dict[str, Path | None], dict]:
         auditoria_persona["mensaje"] = mensaje
         auditoria[persona.nombre] = auditoria_persona
         return {"pdf_principal": None, "pdf_fiador": None}, auditoria
@@ -181,7 +188,6 @@ def generar_pdf(
         "nombre": persona.nombre,
         "estado": estado,
         "cuotas": cuotas,
-        "fecha_proximo_pago": persona.fecha_proximo_pago,
         "total": persona.total_formateado,
         "fiador": persona.fiador,
         "correo_fiador": persona.correo_fiador,
@@ -213,7 +219,7 @@ def generar_pdf(
 def procesar_lote(
     personas: list[Persona],
     max_workers: int = 4,
-) -> tuple[dict, dict, dict]:
+) -> tuple[dict, dict]:
     """
     Procesa una lista de Persona en paralelo usando ThreadPoolExecutor.
 
@@ -231,7 +237,7 @@ def procesar_lote(
 
     def _procesar_uno(persona: Persona) -> None:
         try:
-            _, aud, inst = generar_pdf(persona, {}, {})
+            _, aud = generar_pdf(persona, {})
             with _lock:
                 auditoria.update(aud)
                 t_gen = aud.get(persona.nombre, {}).get("tiempo_generacion")
