@@ -25,16 +25,55 @@ def clean_value(value):
 
     return value
 
+def parse_decimal(value):
+    if value is None:
+        return None
+
+    if isinstance(value, (int, float)):
+        return float(value)
+
+    text = str(value).strip()
+    if text == "":
+        return None
+
+    text = text.replace(" ", "")
+    text = text.replace("₡", "")
+    text = text.replace("$", "")
+
+    has_comma = "," in text
+    has_dot = "." in text
+
+    if has_comma and has_dot:
+        last_comma = text.rfind(",")
+        last_dot = text.rfind(".")
+        if last_dot > last_comma:
+            normalized = text.replace(",", "")
+        else:
+            normalized = text.replace(".", "").replace(",", ".")
+    elif has_comma:
+        parts = text.split(",")
+        if len(parts[-1]) == 2:
+            normalized = text.replace(",", ".")
+        else:
+            normalized = text.replace(",", "")
+    elif has_dot:
+        parts = text.split(".")
+        if len(parts[-1]) == 2:
+            normalized = text
+        else:
+            normalized = text.replace(".", "")
+    else:
+        normalized = text
+
+    try:
+        return float(normalized)
+    except ValueError:
+        return None
 def cargar_registros(
     archivo_excel: str,
-<<<<<<< HEAD
     auditoria: dict,
     monitoreo: dict,
 ) -> tuple[list[Model.Persona], dict[str,Any], dict[str,Any]]:
-=======
-    auditoria: dict
-) -> tuple[list[Model.Persona], dict[str,Any]]:
->>>>>>> 0d3387d1f5c69ec7c8feb435764e9bf2f92eec91
 
     inicio = perf_counter()
     nombre = os.path.splitext(
@@ -57,24 +96,18 @@ def cargar_registros(
 
                 email=clean_value(fila[3]),
 
-                estado=clean_value(fila[4]),
+                estado=clean_value(fila[6]),
 
                 cuotas_atrasadas=int(
-                    clean_value(fila[5]) or 0
+                    clean_value(fila[7]) or 0
                 ),
                 total=(
-                    float(
-                        str(clean_value(fila[6]))
-                        .replace(".", "")
-                        .replace(",", ".")
-                    )
-                    if clean_value(fila[6])
-                    else None
+                    parse_decimal(clean_value(fila[13]))
                 ),
 
-                correo_fiador=clean_value(fila[8]),
+                correo_fiador=clean_value(fila[15]),
 
-                fiador=clean_value(fila[7])
+                fiador=clean_value(fila[14])
             )
 
             registros.append(persona)
@@ -95,16 +128,12 @@ def cargar_registros(
                 "mensaje": f"Error al procesar fila {index}: {exc}",
             }
             filas_invalidas += 1
-<<<<<<< HEAD
     monitoreo["cargador"] = {
         "tiempo_segundos": round(perf_counter() - inicio, 4),
         "registros_leidos": filas_validas + filas_invalidas,
         "registros_validos": filas_validas,
         "registros_invalidos": filas_invalidas,
     }
-=======
-    
->>>>>>> 0d3387d1f5c69ec7c8feb435764e9bf2f92eec91
 
-    return list(registros), auditoria
+    return list(registros), auditoria, monitoreo
 

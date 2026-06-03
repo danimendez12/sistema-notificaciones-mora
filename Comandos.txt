@@ -1,0 +1,1 @@
+.\.venv\Scripts\python.exe -m PyInstaller --clean --noconfirm --onedir --windowed --add-data "Templates;Templates" --add-data "Templates/assets;Templates/assets" --add-data "$env:LOCALAPPDATA\ms-playwright;ms-playwright" --hidden-import win32com --hidden-import win32com.client --name SistemaNotificacionesMora main.py

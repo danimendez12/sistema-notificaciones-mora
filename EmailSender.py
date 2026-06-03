@@ -15,16 +15,34 @@ def _asunto_por_cuotas(cuotas: int) -> str:
     return "Notificacion de Traslado a Cobro Judicial - Pago Beca Prestamos - Instituto Tecnológico de Costa Rica"
 
 
+def _seleccionar_cuenta_outlook(outlook, smtp_address: str):
+    cuenta_envio = None
+    for account in outlook.Session.Accounts:
+        if getattr(account, "SmtpAddress", "").lower() == smtp_address.lower():
+            cuenta_envio = account
+            break
+
+    if cuenta_envio is None:
+        raise RuntimeError(
+            f"La cuenta {smtp_address} no está configurada en Outlook."
+        )
+
+    return cuenta_envio
+
+
 def enviar_correo(
     correo: str,
     asunto: str,
     cuerpo: str,
-    adjunto: Path
+    adjunto: Path,
+    cuenta_smtp: str = "tec@estudiantec.cr"
 ) -> bool:
 
     try:
         outlook = win32.Dispatch("outlook.application")
         mail = outlook.CreateItem(0)
+        cuenta_envio = _seleccionar_cuenta_outlook(outlook, cuenta_smtp)
+        mail._oleobj_.Invoke(*(64209, 0, 8, 0, cuenta_envio))
 
         mail.To = correo
         mail.Subject = asunto

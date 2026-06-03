@@ -10,6 +10,39 @@ import Cargador
 import EmailSender
 import Auditoria
 import Monitoreo
+import sys
+import traceback
+import threading
+
+
+# Manejo global de excepciones para capturar errores en el ejecutable
+def _handle_uncaught(exc_type, exc_value, exc_tb):
+    try:
+        ruta_log = "error.log"
+        with open(ruta_log, "w", encoding="utf-8") as fh:
+            traceback.print_exception(exc_type, exc_value, exc_tb, file=fh)
+    except Exception:
+        pass
+
+    try:
+        # Mostrar dialogo si tkinter está disponible
+        import tkinter.messagebox as mb
+        mb.showerror("Error de la aplicación", f"Ocurrió un error. Revisá {ruta_log} para más detalles.")
+    except Exception:
+        pass
+
+
+sys.excepthook = _handle_uncaught
+
+
+def _thread_excepthook(args):
+    _handle_uncaught(args.exc_type, args.exc_value, args.exc_traceback)
+
+try:
+    threading.excepthook = _thread_excepthook
+except Exception:
+    # versiones antiguas de Python pueden no soportar threading.excepthook
+    pass
 
 def seleccionar_archivo():
     ruta = filedialog.askopenfilename(
