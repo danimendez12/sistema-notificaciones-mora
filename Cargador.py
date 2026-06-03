@@ -27,9 +27,14 @@ def clean_value(value):
 
 def cargar_registros(
     archivo_excel: str,
+<<<<<<< HEAD
     auditoria: dict,
     monitoreo: dict,
 ) -> tuple[list[Model.Persona], dict[str,Any], dict[str,Any]]:
+=======
+    auditoria: dict
+) -> tuple[list[Model.Persona], dict[str,Any]]:
+>>>>>>> 0d3387d1f5c69ec7c8feb435764e9bf2f92eec91
 
     inicio = perf_counter()
     nombre = os.path.splitext(
@@ -90,12 +95,16 @@ def cargar_registros(
                 "mensaje": f"Error al procesar fila {index}: {exc}",
             }
             filas_invalidas += 1
+<<<<<<< HEAD
     monitoreo["cargador"] = {
         "tiempo_segundos": round(perf_counter() - inicio, 4),
         "registros_leidos": filas_validas + filas_invalidas,
         "registros_validos": filas_validas,
         "registros_invalidos": filas_invalidas,
     }
+=======
+    
+>>>>>>> 0d3387d1f5c69ec7c8feb435764e9bf2f92eec91
 
-    return list(registros), auditoria, monitoreo
+    return list(registros), auditoria
 

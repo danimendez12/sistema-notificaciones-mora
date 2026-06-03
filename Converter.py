@@ -1,5 +1,7 @@
 import os
 import sys
+import os
+import sys
 from pathlib import Path
 import re
 import threading
@@ -13,6 +15,11 @@ from Model import Persona
 
 
 BASE_DIR = Path(__file__).resolve().parent
+
+_meipass = getattr(sys, '_MEIPASS', None)
+if getattr(sys, 'frozen', False) and _meipass:
+    _bundle_root = Path(_meipass)
+    os.environ.setdefault("PLAYWRIGHT_BROWSERS_PATH", str(_bundle_root / "ms-playwright"))
 
 _meipass = getattr(sys, '_MEIPASS', None)
 if getattr(sys, 'frozen', False) and _meipass:

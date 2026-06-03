@@ -11,7 +11,6 @@ import EmailSender
 import Auditoria
 import Monitoreo
 
-
 def seleccionar_archivo():
     ruta = filedialog.askopenfilename(
         title="Seleccionar archivo Excel",
@@ -77,9 +76,13 @@ def ejecutar_proceso():
             if total_reg == 0:
                 log("⚠️  No se encontraron registros para procesar.", "warn")
                 return
+            if total_reg == 0:
+                log("⚠️  No se encontraron registros para procesar.", "warn")
+                return
 
             # ── FASE 1: Generar PDFs en paralelo ──────────────────────────────
             log("⏳ Fase 1: Generando PDFs en paralelo...")
+            
             
             
             resultados_pdf = {}  # {nombre: {"pdf_principal": Path, "pdf_fiador": Path}}
@@ -91,6 +94,8 @@ def ejecutar_proceso():
             def _generar_pdf_persona(persona):
                 try:
                     resultado, aud= Converter.generar_pdf(persona, {})
+                    
+                   
                     
                    
                     
@@ -123,6 +128,7 @@ def ejecutar_proceso():
                         auditoria[persona.nombre] = error_entry
                     return persona.nombre, {"pdf_principal": None, "pdf_fiador": None}
 
+            max_workers_pdf = max(1, min(4, total_reg))
             max_workers_pdf = max(1, min(4, total_reg))
             with ThreadPoolExecutor(max_workers=max_workers_pdf) as executor:
                 futures = {executor.submit(_generar_pdf_persona, p): p for p in registros}
@@ -160,6 +166,8 @@ def ejecutar_proceso():
                     
                     
                     
+                    
+                    
                     # Thread-safe update de auditoría
                     with auditoria_lock:
                         auditoria.update(auditoria_actualizada)
@@ -172,6 +180,7 @@ def ejecutar_proceso():
                             auditoria[persona.nombre]["error_envio"] = str(e)
                     return persona.nombre
 
+            max_workers_email = max(1, min(6, total_reg))
             max_workers_email = max(1, min(6, total_reg))
             with ThreadPoolExecutor(max_workers=max_workers_email) as executor:
                 futures = {executor.submit(_enviar_correo_persona, p): p for p in registros}
