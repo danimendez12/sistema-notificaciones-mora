@@ -11,8 +11,6 @@ class Persona:
 
     cuotas_atrasadas: int = 0
 
-    fecha_proximo_pago: Optional[str] = None
-
     total: Optional[float] = None
 
     correo_fiador: Optional[str] = None

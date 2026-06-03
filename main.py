@@ -66,32 +66,42 @@ def ejecutar_proceso():
         try:
             auditoria = {}
             instrucciones = {}
-            monitoreo = {}
             log(f"📂  Cargando: {archivo}")
 
-            registros, auditoria, monitoreo = Cargador.cargar_registros(archivo, auditoria, monitoreo)
-            total_reg = len(registros)
-            log(f"✅  {total_reg} registro(s) cargados.\n")
+            proceso_inicio = perf_counter()
 
-            inicio_proceso = perf_counter()
+            monitoreo = {}
+            registros, auditoria, monitoreo = Cargador.cargar_registros(archivo, auditoria, monitoreo)
+
+            total_reg = len(registros)
+            if total_reg == 0:
+                log("⚠️  No se encontraron registros para procesar.", "warn")
+                return
 
             # ── FASE 1: Generar PDFs en paralelo ──────────────────────────────
             log("⏳ Fase 1: Generando PDFs en paralelo...")
-            t_gen_inicio = perf_counter()
             
-            tiempos_generacion = []
+            
             resultados_pdf = {}  # {nombre: {"pdf_principal": Path, "pdf_fiador": Path}}
+            pdf_inicio = perf_counter()
+            pdf_stats = {"exitos": 0, "fallidos": 0}
+            pdf_stats_lock = threading.Lock()
             auditoria_lock_gen = threading.Lock()
             
             def _generar_pdf_persona(persona):
                 try:
                     resultado, aud= Converter.generar_pdf(persona, {})
-                    t_gen = aud.get(persona.nombre, {}).get("tiempo_generacion", 0)
-                    tiempos_generacion.append(t_gen)
+                    
+                   
                     
                     # Thread-safe update de auditoría
                     with auditoria_lock_gen:
                         auditoria.update(aud)
+                    with pdf_stats_lock:
+                        if resultado.get("pdf_principal"):
+                            pdf_stats["exitos"] += 1
+                        else:
+                            pdf_stats["fallidos"] += 1
                     
                     return persona.nombre, resultado
                 except Exception as e:
@@ -113,7 +123,7 @@ def ejecutar_proceso():
                         auditoria[persona.nombre] = error_entry
                     return persona.nombre, {"pdf_principal": None, "pdf_fiador": None}
 
-            max_workers_pdf = min(4, total_reg)
+            max_workers_pdf = max(1, min(4, total_reg))
             with ThreadPoolExecutor(max_workers=max_workers_pdf) as executor:
                 futures = {executor.submit(_generar_pdf_persona, p): p for p in registros}
                 for future in as_completed(futures):
@@ -123,24 +133,32 @@ def ejecutar_proceso():
                     except Exception as e:
                         persona = futures[future]
                         log(f"   ⚠️  Excepción en thread PDF para {persona.nombre}: {e}", "warn")
+                        pdf_stats["fallidos"] += 1
 
-            t_gen_total = perf_counter() - t_gen_inicio
-            log(f"✅ PDFs generados en {t_gen_total:.2f}s (promedio: {sum(tiempos_generacion)/len(tiempos_generacion):.2f}s por PDF)\n" if tiempos_generacion else "✅ PDFs generados\n")
+            monitoreo["pdf"] = {
+                "tiempo_segundos": round(perf_counter() - pdf_inicio, 4),
+                "registros_totales": total_reg,
+                "registros_exitosos": pdf_stats["exitos"],
+                "registros_fallidos": pdf_stats["fallidos"],
+                "workers_usados": max_workers_pdf,
+            }
+
+           
 
             # ── FASE 2: Enviar correos en paralelo ────────────────────────────
             log("⏳ Fase 2: Enviando correos en paralelo...")
+            max_workers_email = max(1, min(6, total_reg))
             t_envio_inicio = perf_counter()
-            
-            tiempos_envio = []
+            email_workers = max_workers_email
+         
             auditoria_lock = threading.Lock()
             
             def _enviar_correo_persona(persona):
                 try:
                     resultado = resultados_pdf.get(persona.nombre, {"pdf_principal": None, "pdf_fiador": None})
-                    t_env_inicio = perf_counter()
                     auditoria_actualizada = EmailSender.enviar_correos(persona, resultado, auditoria)
-                    t_env = perf_counter() - t_env_inicio
-                    tiempos_envio.append(t_env)
+                    
+                    
                     
                     # Thread-safe update de auditoría
                     with auditoria_lock:
@@ -154,7 +172,7 @@ def ejecutar_proceso():
                             auditoria[persona.nombre]["error_envio"] = str(e)
                     return persona.nombre
 
-            max_workers_email = min(6, total_reg)
+            max_workers_email = max(1, min(6, total_reg))
             with ThreadPoolExecutor(max_workers=max_workers_email) as executor:
                 futures = {executor.submit(_enviar_correo_persona, p): p for p in registros}
                 completados = 0
@@ -166,9 +184,28 @@ def ejecutar_proceso():
                         persona = futures[future]
                         log(f"   ⚠️  Excepción en thread correo para {persona.nombre}: {e}", "warn")
 
-            t_envio_total = perf_counter() - t_envio_inicio
-            log(f"✅ Correos enviados en {t_envio_total:.2f}s (promedio: {sum(tiempos_envio)/len(tiempos_envio):.2f}s por correo)\n" if tiempos_envio else "✅ Correos enviados\n")
+            envios_exitosos = sum(
+                1
+                for persona in registros
+                if auditoria.get(persona.nombre, {}).get("correo_deudor_enviado")
+                or auditoria.get(persona.nombre, {}).get("correo_fiador_enviado")
+            )
+            envios_errores = sum(
+                1
+                for persona in registros
+                if auditoria.get(persona.nombre, {}).get("error_envio")
+            )
 
+            monitoreo["email"] = {
+                "tiempo_segundos": round(perf_counter() - t_envio_inicio, 4),
+                "registros_totales": total_reg,
+                "envios_intentados": completados,
+                "envios_exitosos": envios_exitosos,
+                "errores": envios_errores,
+                "workers_usados": email_workers,
+            }
+
+           
             # ── Logs finales por persona ──────────────────────────────────────
             log("📋 Resumen de procesamiento:")
             ok = 0
@@ -183,24 +220,21 @@ def ejecutar_proceso():
                 else:
                     errores += 1
                 
-                log(f"   [{i}/{total_reg}] {nombre}")
                 log_auditoria(nombre, info)
 
-            # ── Métricas finales ──────────────────────────────────────────────
-            t_total = perf_counter() - inicio_proceso
-            
-            monitoreo["metricas_proceso"] = {
-                "Tiempo_fase_generacion": round(t_gen_total, 4),
-                "Tiempo_fase_envio": round(t_envio_total, 4),
-                "Tiempo_promedio_generacion": round(sum(tiempos_generacion) / len(tiempos_generacion), 4) if tiempos_generacion else 0,
-                "Tiempo_promedio_envio": round(sum(tiempos_envio) / len(tiempos_envio), 4) if tiempos_envio else 0,
-                "Tiempo_total_proceso": round(t_total, 4),
-                "Registros_procesados": total_reg,
-                "Exitosos": ok,
-                "Con_errores": errores,
-                "Workers_PDF": max_workers_pdf,
-                "Workers_Correo": max_workers_email,
+            monitoreo["resumen"] = {
+                "personas_totales": total_reg,
+                "correctos": ok,
+                "errores": errores,
+                "porcentaje_exito": round(ok / total_reg * 100, 2) if total_reg else 0.0,
             }
+
+            monitoreo["proceso"] = {
+                "tiempo_total_segundos": round(perf_counter() - proceso_inicio, 4),
+                "personas_totales": total_reg,
+                "etapas": ["cargador", "pdf", "email", "resumen"],
+            }
+
 
             # ── Resumen final ─────────────────────────────────────────────────
             log(f"\n{'─'*50}")
@@ -208,10 +242,12 @@ def ejecutar_proceso():
                 f"✔️  Finalizó.  Correctos: {ok}   Con errores: {errores}",
                 "ok" if errores == 0 else "warn"
             )
-            log(f"Tiempo total: {t_total:.2f}s ({t_total/total_reg:.2f}s por registro)\n", "ok")
-            
             Auditoria.generar_auditoria(auditoria)
-            Monitoreo.generar_monitoreo(monitoreo)
+            try:
+                archivo_monitoreo = Monitoreo.generar_monitoreo(monitoreo)
+                log(f"📊 Monitoreo guardado en: {archivo_monitoreo}")
+            except Exception as e:
+                log(f"⚠️  No se pudo generar el monitoreo: {e}", "warn")
             
             try:
                 Converter.shutdown_playwright()

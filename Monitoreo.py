@@ -1,7 +1,6 @@
 from pathlib import Path
 from datetime import datetime
-
-from openpyxl import Workbook
+import json
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -22,14 +21,18 @@ def generar_monitoreo(
         "%Y-%m-%d_%H-%M-%S"
     )
 
-    archivo_monitoreo = (
-        OUTPUT_DIR
-        / f"Monitoreo.txt"
-    )
+    archivo_monitoreo = OUTPUT_DIR / f"Monitoreo_{fecha}.json"
 
 
-    with open(archivo_monitoreo, "w") as f:
-        for nombre, datos in logs.items():
-            f.write(f"{nombre}: {datos}\n")
+    with open(archivo_monitoreo, "w", encoding="utf-8") as f:
+        json.dump(
+            {
+                "generado_el": datetime.now().isoformat(),
+                "monitoreo": logs,
+            },
+            f,
+            indent=2,
+            ensure_ascii=False,
+        )
 
     return archivo_monitoreo

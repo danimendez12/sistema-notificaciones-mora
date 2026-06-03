@@ -28,7 +28,7 @@ def clean_value(value):
 def cargar_registros(
     archivo_excel: str,
     auditoria: dict,
-    monitoreo: dict
+    monitoreo: dict,
 ) -> tuple[list[Model.Persona], dict[str,Any], dict[str,Any]]:
 
     inicio = perf_counter()
@@ -52,29 +52,24 @@ def cargar_registros(
 
                 email=clean_value(fila[3]),
 
-                estado=clean_value(fila[6]),
+                estado=clean_value(fila[4]),
 
                 cuotas_atrasadas=int(
-                    clean_value(fila[7]) or 0
+                    clean_value(fila[5]) or 0
                 ),
-
-                fecha_proximo_pago=str(
-                    clean_value(fila[9])
-                ) if clean_value(fila[9]) else None,
-
                 total=(
                     float(
-                        str(clean_value(fila[13]))
+                        str(clean_value(fila[6]))
                         .replace(".", "")
                         .replace(",", ".")
                     )
-                    if clean_value(fila[13])
+                    if clean_value(fila[6])
                     else None
                 ),
 
-                correo_fiador=clean_value(fila[15]),
+                correo_fiador=clean_value(fila[8]),
 
-                fiador=clean_value(fila[14])
+                fiador=clean_value(fila[7])
             )
 
             registros.append(persona)
@@ -95,11 +90,11 @@ def cargar_registros(
                 "mensaje": f"Error al procesar fila {index}: {exc}",
             }
             filas_invalidas += 1
-    monitoreo["metricas_cargador"] = {
-        "Tiempo_carga": perf_counter() - inicio,
-        "Registros_cargados": len(registros),
-        "Filas_validas": filas_validas,
-        "Filas_invalidas": filas_invalidas
+    monitoreo["cargador"] = {
+        "tiempo_segundos": round(perf_counter() - inicio, 4),
+        "registros_leidos": filas_validas + filas_invalidas,
+        "registros_validos": filas_validas,
+        "registros_invalidos": filas_invalidas,
     }
 
     return list(registros), auditoria, monitoreo
