@@ -71,8 +71,9 @@ def parse_decimal(value):
         return None
 def cargar_registros(
     archivo_excel: str,
-    auditoria: dict
-) -> tuple[list[Model.Persona], dict[str,Any]]:
+    auditoria: dict,
+    monitoreo: dict,
+) -> tuple[list[Model.Persona], dict[str,Any], dict[str,Any]]:
 
     inicio = perf_counter()
     nombre = os.path.splitext(
@@ -127,6 +128,12 @@ def cargar_registros(
                 "mensaje": f"Error al procesar fila {index}: {exc}",
             }
             filas_invalidas += 1
+    monitoreo["cargador"] = {
+        "tiempo_segundos": round(perf_counter() - inicio, 4),
+        "registros_leidos": filas_validas + filas_invalidas,
+        "registros_validos": filas_validas,
+        "registros_invalidos": filas_invalidas,
+    }
 
-    return list(registros), auditoria
+    return list(registros), auditoria, monitoreo
 

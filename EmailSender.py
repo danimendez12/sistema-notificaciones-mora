@@ -15,16 +15,48 @@ def _asunto_por_cuotas(cuotas: int) -> str:
     return "Notificacion de Traslado a Cobro Judicial - Pago Beca Prestamos - Instituto Tecnológico de Costa Rica"
 
 
+def obtener_cuentas_outlook() -> list[str]:
+    """Obtiene la lista de cuentas SMTP disponibles en Outlook."""
+    try:
+        outlook = __import__('win32com.client', fromlist=['client']).Dispatch("outlook.application")
+        cuentas = []
+        for account in outlook.Session.Accounts:
+            smtp = getattr(account, "SmtpAddress", "").strip()
+            if smtp:
+                cuentas.append(smtp)
+        return cuentas
+    except Exception:
+        return []
+
+
+def _seleccionar_cuenta_outlook(outlook, smtp_address: str):
+    cuenta_envio = None
+    for account in outlook.Session.Accounts:
+        if getattr(account, "SmtpAddress", "").lower() == smtp_address.lower():
+            cuenta_envio = account
+            break
+
+    if cuenta_envio is None:
+        raise RuntimeError(
+            f"La cuenta {smtp_address} no está configurada en Outlook."
+        )
+
+    return cuenta_envio
+
+
 def enviar_correo(
     correo: str,
     asunto: str,
     cuerpo: str,
-    adjunto: Path
+    adjunto: Path,
+    cuenta_smtp: str = "rprestamos@itcr.ac.cr"
 ) -> bool:
 
     try:
         outlook = win32.Dispatch("outlook.application")
         mail = outlook.CreateItem(0)
+        cuenta_envio = _seleccionar_cuenta_outlook(outlook, cuenta_smtp)
+        mail._oleobj_.Invoke(*(64209, 0, 8, 0, cuenta_envio))
 
         mail.To = correo
         mail.Subject = asunto
@@ -44,7 +76,8 @@ def enviar_correo(
 def enviar_correos(
     persona: Persona,
     resultado: dict,
-    auditoria: dict
+    auditoria: dict,
+    cuenta_smtp: str = "rprestamos@itcr.ac.cr"
 ) -> dict:
 
     auditoria_envio = {
@@ -71,7 +104,8 @@ def enviar_correos(
                         "Departamento Financiero Contable\n"
                         "Instituto Tecnológico de Costa Rica"
                     ),
-                    adjunto=resultado["pdf_principal"]
+                    adjunto=resultado["pdf_principal"],
+                    cuenta_smtp=cuenta_smtp
                 )
                 auditoria_envio["correo_deudor_enviado"] = enviado
                 auditoria_envio["correo_deudor"] = persona.email
@@ -96,7 +130,8 @@ def enviar_correos(
                         "Departamento Financiero Contable\n"
                         "Instituto Tecnológico de Costa Rica"
                     ),
-                    adjunto=resultado["pdf_fiador"]
+                    adjunto=resultado["pdf_fiador"],
+                    cuenta_smtp=cuenta_smtp
                 )
                 auditoria_envio["correo_fiador_enviado"] = enviado_fiador
                 auditoria_envio["correo_fiador"] = persona.correo_fiador
