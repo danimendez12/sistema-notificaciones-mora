@@ -15,6 +15,20 @@ def _asunto_por_cuotas(cuotas: int) -> str:
     return "Notificacion de Traslado a Cobro Judicial - Pago Beca Prestamos - Instituto Tecnológico de Costa Rica"
 
 
+def obtener_cuentas_outlook() -> list[str]:
+    """Obtiene la lista de cuentas SMTP disponibles en Outlook."""
+    try:
+        outlook = __import__('win32com.client', fromlist=['client']).Dispatch("outlook.application")
+        cuentas = []
+        for account in outlook.Session.Accounts:
+            smtp = getattr(account, "SmtpAddress", "").strip()
+            if smtp:
+                cuentas.append(smtp)
+        return cuentas
+    except Exception:
+        return []
+
+
 def _seleccionar_cuenta_outlook(outlook, smtp_address: str):
     cuenta_envio = None
     for account in outlook.Session.Accounts:
@@ -35,7 +49,7 @@ def enviar_correo(
     asunto: str,
     cuerpo: str,
     adjunto: Path,
-    cuenta_smtp: str = "tec@estudiantec.cr"
+    cuenta_smtp: str = "rprestamos@itcr.ac.cr"
 ) -> bool:
 
     try:
@@ -62,7 +76,8 @@ def enviar_correo(
 def enviar_correos(
     persona: Persona,
     resultado: dict,
-    auditoria: dict
+    auditoria: dict,
+    cuenta_smtp: str = "rprestamos@itcr.ac.cr"
 ) -> dict:
 
     auditoria_envio = {
@@ -89,7 +104,8 @@ def enviar_correos(
                         "Departamento Financiero Contable\n"
                         "Instituto Tecnológico de Costa Rica"
                     ),
-                    adjunto=resultado["pdf_principal"]
+                    adjunto=resultado["pdf_principal"],
+                    cuenta_smtp=cuenta_smtp
                 )
                 auditoria_envio["correo_deudor_enviado"] = enviado
                 auditoria_envio["correo_deudor"] = persona.email
@@ -114,7 +130,8 @@ def enviar_correos(
                         "Departamento Financiero Contable\n"
                         "Instituto Tecnológico de Costa Rica"
                     ),
-                    adjunto=resultado["pdf_fiador"]
+                    adjunto=resultado["pdf_fiador"],
+                    cuenta_smtp=cuenta_smtp
                 )
                 auditoria_envio["correo_fiador_enviado"] = enviado_fiador
                 auditoria_envio["correo_fiador"] = persona.correo_fiador
