@@ -18,6 +18,7 @@ Asegúrate de que tu archivo Excel tenga estas columnas:
 ```
 cedula | carne | nombre | email | celular | telefono | estado | cuotas atrasado | f.inicio pago | FECHA PROX.PAGO | PRINCIPAL |	INTE. ACUMULADO	| INT.SALDOS	| TOTAL |	FIADOR 1 |	CORREO FIADOR 1 |	CELULAR |	TELÉFONO | 	FIADOR 2 |	CORREO FIADOR 2 |	CELULAR	|TELÉFONO 
 
+```
 
 ### 2️⃣ Abre la aplicación
 
