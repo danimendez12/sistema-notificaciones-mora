@@ -1,20 +1,20 @@
-# 📋 Sistema de Notificaciones por Mora
+# Sistema de Notificaciones por Mora
 
 **Herramienta automatizada para notificar deudores con cuotas atrasadas**
 
-## ✨ Características Principales
+## Características Principales
 
-- 📧 **Envío automatizado de correos** a deudores y fiadores
-- 📄 **Generación de PDFs personalizados** con información de cada deudor
-- ⚡ **Procesamiento paralelo** para máxima velocidad
-- 📊 **Reportes detallados de auditoría** con información completa
-- ⚠️ **Auditoría de errores** para identificar problemas rápidamente
-- 🎛️ **Interfaz gráfica fácil de usar** sin necesidad de conocimientos técnicos
-- 🛑 **Cancelación en cualquier momento** sin perder los resultados parciales
+- **Envío automatizado de correos** a deudores y fiadores
+- **Generación de PDFs personalizados** con información de cada deudor
+- **Procesamiento paralelo** para máxima velocidad
+- **Reportes detallados de auditoría** con información completa
+- **Auditoría de errores** para identificar problemas rápidamente
+- **Interfaz gráfica fácil de usar** sin necesidad de conocimientos técnicos
+- **Cancelación en cualquier momento** sin perder los resultados parciales
 
 ---
 
-## 🚀 Inicio Rápido
+## Inicio Rápido
 
 ### Requisitos Previos
 - Windows 7 o superior
@@ -40,14 +40,14 @@
 
 ---
 
-## 📖 Documentación
+## Documentación
 
-- 📘 **[GUIA_RAPIDA.md](GUIA_RAPIDA.md)** - Inicio en 3 pasos
-- 📕 **[MANUAL_DE_USUARIO.md](MANUAL_DE_USUARIO.md)** - Documentación completa y detallada
+- **[GUIA_RAPIDA.md](GUIA_RAPIDA.md)** - Inicio en 3 pasos
+- **[MANUAL_DE_USUARIO.md](MANUAL_DE_USUARIO.md)** - Documentación completa y detallada
 
 ---
 
-## 📋 Formato del Archivo Excel Requerido
+## Formato del Archivo Excel Requerido
 
 Tu archivo Excel debe tener estas columnas:
 
@@ -73,7 +73,7 @@ Tu archivo Excel debe tener estas columnas:
 
 ---
 
-## 📁 Estructura de Carpetas
+## Estructura de Carpetas
 
 ```
 sistema-notificaciones-mora/
@@ -107,7 +107,7 @@ sistema-notificaciones-mora/
 
 ---
 
-## 🎯 Flujo de Procesamiento
+## Flujo de Procesamiento
 
 ```
 Excel → Cargador → Genera PDFs → Envía Correos → Auditoría
@@ -130,7 +130,7 @@ Excel → Cargador → Genera PDFs → Envía Correos → Auditoría
 
 ---
 
-## 📊 Archivos Generados
+## Archivos Generados
 
 Todos los archivos se guardan en la carpeta `Resultados/`:
 
@@ -159,7 +159,7 @@ Estadísticas del proceso:
 
 ---
 
-## ⚙️ Características Técnicas
+## Características Técnicas
 
 - **Lenguaje**: Python 3.8+
 - **Interfaz**: Tkinter (GUI)
@@ -171,7 +171,7 @@ Estadísticas del proceso:
 
 ---
 
-## ❓ Preguntas Frecuentes
+## Preguntas Frecuentes
 
 ### ¿Necesito conocimientos técnicos?
 **No.** La aplicación tiene una interfaz gráfica intuitiva. Solo necesitas tu archivo Excel y Outlook configurado.
@@ -194,7 +194,7 @@ El proceso se detendrá de forma segura. Puedes reintentar sin perder los result
 
 ---
 
-## 🔧 Solución de Problemas
+## Solución de Problemas
 
 ### Outlook no aparece
 1. Abre Microsoft Outlook
@@ -213,23 +213,17 @@ El proceso se detendrá de forma segura. Puedes reintentar sin perder los result
 
 ---
 
-## 📞 Soporte
+## Soporte
 
 Para más información:
 1. Lee la **[GUIA_RAPIDA.md](GUIA_RAPIDA.md)** para inicio rápido
 2. Consulta **[MANUAL_DE_USUARIO.md](MANUAL_DE_USUARIO.md)** para documentación completa
 3. Revisa los archivos de auditoría para diagnosticar problemas
-4. Contacta al administrador del sistema
+
 
 ---
 
-## 📝 Licencia y Disclaimer
-
-Este software se proporciona "TAL CUAL" sin garantía. Úsalo bajo tu responsabilidad. Siempre mantén respaldos de tus datos.
-
----
-
-## 📋 Historial de Cambios
+## Historial de Cambios
 
 | Versión | Fecha | Cambios |
 |---------|-------|---------|
@@ -240,7 +234,3 @@ Este software se proporciona "TAL CUAL" sin garantía. Úsalo bajo tu responsabi
 
 **Versión Actual:** 1.1  
 **Última Actualización:** 5 de junio de 2024
-
----
-
-🎉 **¡Gracias por usar Sistema de Notificaciones por Mora!**
