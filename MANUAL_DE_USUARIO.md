@@ -1,4 +1,4 @@
-# 📋 Manual de Usuario - Sistema de Notificaciones por Mora
+# Manual de Usuario - Sistema de Notificaciones por Mora
 
 ## Contenido
 1. [Introducción](#introducción)
@@ -16,11 +16,11 @@
 ## Introducción
 
 **Sistema de Notificaciones por Mora** es una herramienta automatizada que:
-- 📧 Procesa información de deudores con cuotas atrasadas
-- 📄 Genera notificaciones personalizadas en PDF
-- 💌 Envía correos automáticamente a deudores y fiadores
-- 📊 Genera reportes de auditoría detallados
-- ⚡ Procesa múltiples registros en paralelo para máxima velocidad
+- Procesa información de deudores con cuotas atrasadas
+- Genera notificaciones personalizadas en PDF
+- Envía correos automáticamente a deudores y fiadores
+- Genera reportes de auditoría detallados
+- Procesa múltiples registros en paralelo para máxima velocidad
 
 ---
 
@@ -115,11 +115,11 @@ CEDULA	CARNE	NOMBRE	EMAIL	CELULAR	TELEFONO CASA	ESTADO	CUOTAS ATRASO	F.INICIO PA
 ### Paso 4: Revisar Resultados
 
 El proceso generará:
-- ✅ Archivos PDF de notificaciones
-- 📧 Correos enviados automáticamente
-- 📋 Auditoría completa
-- ⚠️ Auditoría de errores (si hay problemas)
-- 📊 Monitoreo del proceso
+- Archivos PDF de notificaciones
+- Correos enviados automáticamente
+- Auditoría completa
+- Auditoría de errores (si hay problemas)
+- Monitoreo del proceso
 
 ---
 
